@@ -1,9 +1,11 @@
 # appRoutes.js
 const express = require('express');
 const router = express.Router();
-const appController = require('../controllers/appController');
+const AppController = require('../controllers/appController');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.get('/', appController.getIndex);
-router.post('/data', appController.postData);
+// Wrap controller methods with asyncHandler for consistent error handling
+router.get('/', asyncHandler(AppController.getIndex));
+router.post('/data', asyncHandler(AppController.postData));
 
 module.exports = router;
