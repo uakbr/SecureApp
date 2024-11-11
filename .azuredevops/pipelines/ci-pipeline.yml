@@ -1,1 +1,73 @@
 # ci-pipeline.yml
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  dockerRegistryServiceConnection: 'acr-service-connection'
+  imageRepository: 'secureapp'
+  containerRegistry: 'yourregistry.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: Build and Test
+  jobs:
+  - job: BuildTest
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm ci
+        npm run lint
+        npm test
+      displayName: 'Install dependencies, lint, and test'
+
+    - task: SonarQubePrepare@4
+      inputs:
+        SonarQube: 'SonarQube'
+        scannerMode: 'CLI'
+        configMode: 'file'
+      displayName: 'Prepare SonarQube Analysis'
+
+    - task: SonarQubeAnalyze@4
+      displayName: 'Run SonarQube Analysis'
+
+    - task: SonarQubePublish@4
+      inputs:
+        pollingTimeoutSec: '300'
+      displayName: 'Publish SonarQube Results'
+
+    - task: Docker@2
+      inputs:
+        command: build
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+      displayName: 'Build Docker Image'
+
+    - task: Docker@2
+      inputs:
+        command: scan
+        dockerFile: $(dockerfilePath)
+      displayName: 'Scan Docker Image'
+
+    - task: Docker@2
+      inputs:
+        command: push
+        repository: $(imageRepository)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+      displayName: 'Push Docker Image'

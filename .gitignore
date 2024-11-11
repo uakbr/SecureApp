@@ -1,10 +1,19 @@
 # .gitignore
 
-# Node modules
+# Dependencies
 node_modules/
+package-lock.json
+yarn.lock
 
 # Environment variables
 .env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+coverage/
 
 # Logs
 logs/
@@ -13,20 +22,35 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories and files
-.vscode/
+# IDE and editor files
 .idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
 
-# Coverage directory
-coverage/
-
-# Dist directory
-dist/
-
-# Docker files
-docker-compose.yml
-Dockerfile
-
-# Other
-.cache/
+# Temporary files
+.tmp/
 .temp/
+.cache/
+
+# Docker
+docker-compose.override.yml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+
+# Azure
+.azure/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+.DS_Store
+Thumbs.db
