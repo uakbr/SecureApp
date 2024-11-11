@@ -1,5 +1,9 @@
 # Technical Software Specification for SecureApp
 
+## Project Objective:
+
+SecureApp provides a robust framework to guide teams in embedding security throughout CI/CD processes using Azure DevOps, AKS, and Docker. This project prioritizes secure infrastructure setup, code analysis, container security, and Kubernetes best practices. The repository structure supports modular Terraform provisioning, secure application development, and automated deployment pipelines. Through this setup, SecureApp ensures high standards for software quality, secure development workflows, and continuous monitoring. 
+
 ## Overview
 
 SecureApp is an open-source project designed to guide developers and DevOps engineers through implementing secure CI/CD pipelines using Azure DevOps, Kubernetes, Docker, and security tools such as SonarQube. The aim is to enforce security within the software development lifecycle (SDLC), including coding, containerization, Kubernetes deployment, and monitoring.
@@ -213,8 +217,3 @@ SecureApp/
 
 ---
 
-### Project Objective:
-
-SecureApp provides a robust framework to guide teams in embedding security throughout CI/CD processes using Azure DevOps, AKS, and Docker. This project prioritizes secure infrastructure setup, code analysis, container security, and Kubernetes best practices. The repository structure supports modular Terraform provisioning, secure application development, and automated deployment pipelines. Through this setup, SecureApp ensures high standards for software quality, secure development workflows, and continuous monitoring. 
-
-Let me know if you're ready for the ZIP file with this structure or need further customization.
