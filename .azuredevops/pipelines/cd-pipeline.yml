@@ -1,1 +1,118 @@
 # cd-pipeline.yml
+trigger: none # Manual triggers only for CD
+
+resources:
+  pipelines:
+    - pipeline: CI
+      source: CI-Pipeline
+      trigger: 
+        branches:
+          include:
+            - main
+            - develop
+
+variables:
+  - group: secureapp-variables
+  - name: helmChartPath
+    value: 'helm-chart'
+  - name: kubernetesServiceConnection
+    value: 'aks-service-connection'
+  - name: acrServiceConnection
+    value: 'acr-service-connection'
+  - name: imageRepository
+    value: 'secureapp'
+
+stages:
+- stage: DeployDev
+  displayName: Deploy to Development
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: Deploy
+    environment: development
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CI
+            artifact: manifests
+          
+          - task: HelmInstaller@1
+            inputs:
+              helmVersionToInstall: 'latest'
+
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: $(kubernetesServiceConnection)
+              azureResourceGroup: $(resourceGroup)
+              kubernetesCluster: $(clusterName)
+              namespace: 'secureapp-dev'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: $(helmChartPath)
+              releaseName: 'secureapp-dev'
+              valueFile: 'helm-chart/values-dev.yaml'
+              arguments: '--create-namespace --wait'
+
+          - task: Kubernetes@1
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: $(kubernetesServiceConnection)
+              namespace: 'secureapp-dev'
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: '$(Pipeline.Workspace)/CI/manifests'
+
+- stage: DeployProd
+  displayName: Deploy to Production
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: Deploy
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CI
+            artifact: manifests
+
+          - task: HelmInstaller@1
+            inputs:
+              helmVersionToInstall: 'latest'
+
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: $(kubernetesServiceConnection)
+              azureResourceGroup: $(resourceGroup)
+              kubernetesCluster: $(clusterName)
+              namespace: 'secureapp-prod'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: $(helmChartPath)
+              releaseName: 'secureapp-prod'
+              valueFile: 'helm-chart/values-prod.yaml'
+              arguments: '--create-namespace --wait'
+
+          - task: Kubernetes@1
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: $(kubernetesServiceConnection)
+              namespace: 'secureapp-prod'
+              command: 'apply'
+              useConfigurationFile: true
+              configuration: '$(Pipeline.Workspace)/CI/manifests'
+
+  - job: IntegrationTests
+    dependsOn: Deploy
+    steps:
+      - script: |
+          npm ci
+          npm run test:integration
+        displayName: 'Run Integration Tests'
+
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/junit.xml'
+          failTaskOnFailedTests: true
